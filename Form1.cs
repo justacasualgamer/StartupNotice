@@ -1,31 +1,75 @@
 #pragma warning disable IDE1006
 using System.Diagnostics;
+using System.IO;
+using System.Windows.Media;
 
 namespace StartupNotice
 {
     public partial class Form1 : Form
     {
+        // UPDATE VERSION
+        private readonly string __version__ = "v1.0.1";
+        // PLEASE UPDATE VERSION UP HERE
         private bool isDogging = false;
         private readonly string appdataDirectory = Environment.ExpandEnvironmentVariables("%userprofile%\\AppData\\Local\\StartupNotice");
         public Form1()
         {
-            if (!Directory.Exists(appdataDirectory)) Directory.CreateDirectory(appdataDirectory);
-            if (!File.Exists(Path.Combine(appdataDirectory, "options.ini"))) File.CreateText(Path.Combine(appdataDirectory, "options.ini"));
             try
             {
+                if (!Directory.Exists(appdataDirectory)) Directory.CreateDirectory(appdataDirectory);
+                if (!File.Exists(Path.Combine(appdataDirectory, "options.ini")))
+                {
+                    File.CreateText(Path.Combine(appdataDirectory, "options.ini")).Dispose();
+                }
                 string[] readlines = File.ReadAllLines(Path.Combine(appdataDirectory, "options.ini"));
-                if (!readlines.Any(item => item.Trim() == "[StartupOptions] AskForStartupConfirmation=false"))
+                if (!readlines.Any(item => item.Trim().StartsWith("[StartupOptions] Startup=")))
                 {
                     DialogResult a = MessageBox.Show("Do you want to add StartupNotice to your startup files? (One time question)", "StartupNotice", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-                    if (a == DialogResult.Yes) File.Copy(Environment.ProcessPath!, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "StartupNotice.exe"));
-                    File.AppendAllText(Path.Combine(appdataDirectory, "options.ini"), "[StartupOptions] AskForStartupConfirmation=false");
+                    if (a == DialogResult.Yes)
+                    {
+                        File.Copy(Environment.ProcessPath!, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "StartupNotice.exe"), overwrite: true);
+                        File.AppendAllText(Path.Combine(appdataDirectory, "options.ini"), "[StartupOptions] Startup=true\n");
+                    }
+                    else
+                    {
+                        File.AppendAllText(Path.Combine(appdataDirectory, "options.ini"), "[StartupOptions] Startup=false\n");
+                    }
+                    File.AppendAllText(Path.Combine(appdataDirectory, "options.ini"), $"[VersionCheck] Version={__version__}\n");
+                }
+                else
+                {
+                    if (readlines.Any(item => item.Trim() == "[StartupOptions] Startup=true"))
+                    {
+                        List<string> writelines = [.. readlines];
+                        bool foundversioncheck = false;
+                        for (int i = 0; i < writelines.Count; i++)
+                        {
+                            if (writelines[i].Trim().StartsWith($"[VersionCheck] Version="))
+                            {
+                                writelines[i] = $"[VersionCheck] Version={__version__}";
+                                foundversioncheck = true;
+                                MessageBox.Show($"Successfully updated from version {readlines[i].Trim()[23..]} to version {__version__}", "Notice", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            }
+                        }
+                        if (!foundversioncheck)
+                        {
+                            writelines.Add($"[VersionCheck] Version={__version__}");
+                            MessageBox.Show($"Successfully updated to version {__version__}", "Notice", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                        File.WriteAllLines(Path.Combine(appdataDirectory, "options.ini"), writelines);
+                        File.Copy(Environment.ProcessPath!, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "StartupNotice.exe"), overwrite: true);
+                    }
                 }
             }
             catch
             {
                 MessageBox.Show($"It seems that the program could not access the file {Path.Combine(appdataDirectory, "options.ini")}. Please check your permissions and/or try again.");
             }
-            InitializeComponent();
+            finally
+            {
+                InitializeComponent();
+                label2.Text = $"{__version__} by";
+            }
         }
 
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -106,64 +150,67 @@ namespace StartupNotice
                 }
                 else
                 {
+                    pictureBox1.Left = 400;
                     isDogging = true;
-                    Console.Beep(262, 400);
-                    Console.Beep(392, 400);
-                    Console.Beep(196, 200);
-                    Console.Beep(330, 200);
-                    Console.Beep(294, 400);
-                    Console.Beep(262, 400);
-                    Console.Beep(294, 200);
-                    Console.Beep(262, 400);
-                    Console.Beep(196, 200);
-                    Console.Beep(220, 200);
-                    Console.Beep(262, 200);
-                    Console.Beep(175, 400);
-                    Console.Beep(220, 400);
-                    Console.Beep(175, 200);
-                    Console.Beep(262, 200);
-                    Console.Beep(220, 400);
-                    Console.Beep(247, 400);
-                    Console.Beep(262, 200);
-                    Console.Beep(294, 600);
-                    Console.Beep(196, 400);
-                    // second
-                    Console.Beep(131, 400);
-                    Console.Beep(392, 400);
-                    Console.Beep(196, 200);
-                    Console.Beep(330, 200);
-                    Console.Beep(294, 400);
-                    Console.Beep(262, 400);
-                    Console.Beep(294, 200);
-                    Console.Beep(262, 400);
-                    Console.Beep(196, 200);
-                    Console.Beep(220, 200);
-                    Console.Beep(262, 200);
-                    Console.Beep(349, 200);
-                    Console.Beep(330, 200);
-                    Console.Beep(294, 400);
-                    Console.Beep(294, 200);
-                    Console.Beep(262, 200);
-                    Console.Beep(220, 400);
-                    Console.Beep(220, 400);
-                    Console.Beep(262, 400);
-                    Console.Beep(262, 500);
+                    using Stream stream = Properties.Resources.Dogsong;
+                    string tempFilePath = Path.Combine(Path.GetTempPath(), $"dogsong{new Random().Next(2147483647)}.mp3");
+                    using (FileStream fileStream = File.Create(tempFilePath))
+                    {
+                        stream.CopyTo(fileStream);
+                    }
+                    MediaPlayer mediaPlayer = new();
+                    mediaPlayer.Open(new(tempFilePath));
+                    mediaPlayer.Play();
+                    Thread.Sleep(8000);
+                    try
+                    {
+                        File.Delete(tempFilePath);
+                    }
+                    catch
+                    {
+                        ;
+                    }
                     isDogging = false;
                 }
             });
             Thread thread2 = new(() =>
             {
                 pictureBox1.Visible = true;
-                while (isDogging)
+                while (pictureBox1.Left > -60)
                 {
                     pictureBox1.Left--;
-                    Thread.Sleep(12);
+                    Thread.Sleep(8);
                 }
-                pictureBox1.Left = 400;
                 pictureBox1.Visible = false;
             });
             thread.Start();
             thread2.Start();
+        }
+
+        private void pictureBox1_Click(object sender, EventArgs e)
+        {
+            Thread thread = new(() =>
+            {
+                using Stream stream = Properties.Resources.DogBark;
+                string tempFilePath = Path.Combine(Path.GetTempPath(), $"bark{new Random().Next(2147483647)}.mp3");
+                using (FileStream fileStream = File.Create(tempFilePath))
+                {
+                    stream.CopyTo(fileStream);
+                }
+                MediaPlayer mediaPlayer = new();
+                mediaPlayer.Open(new(tempFilePath));
+                mediaPlayer.Play();
+                Thread.Sleep(1000);
+                try
+                {
+                    File.Delete(tempFilePath);
+                }
+                catch
+                {
+                    ;
+                }
+            });
+            thread.Start();
         }
     }
 }

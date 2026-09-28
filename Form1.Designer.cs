@@ -52,12 +52,14 @@
             // 
             // label2
             // 
-            label2.AutoSize = true;
-            label2.Location = new Point(111, 74);
+            label2.Anchor = AnchorStyles.Right;
+            label2.BackColor = Color.Transparent;
+            label2.Location = new Point(65, 74);
             label2.Name = "label2";
-            label2.Size = new Size(53, 15);
+            label2.Size = new Size(99, 15);
             label2.TabIndex = 1;
-            label2.Text = "v1.0.0 by";
+            label2.Text = "vX.X.X by";
+            label2.TextAlign = ContentAlignment.MiddleRight;
             // 
             // linkLabel1
             // 
@@ -122,6 +124,7 @@
             // 
             // pictureBox1
             // 
+            pictureBox1.Cursor = Cursors.Hand;
             pictureBox1.Image = Properties.Resources.AnnoyingDog;
             pictureBox1.Location = new Point(400, 350);
             pictureBox1.Name = "pictureBox1";
@@ -129,6 +132,7 @@
             pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBox1.TabIndex = 8;
             pictureBox1.TabStop = false;
+            pictureBox1.Click += pictureBox1_Click;
             // 
             // Form1
             // 
